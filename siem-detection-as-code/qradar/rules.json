@@ -1,0 +1,62 @@
+[
+  {
+    "name": "DAC_AQL_A01_BOLA_Exploit",
+    "query": "SELECT UTF8(payload) AS packet_data, sourceip, destinationip FROM events WHERE (qid = 5000023 OR qid = 5000024) AND packet_data LIKE '%/api/v1/user/%' AND packet_data LIKE '%HTTP/1.1 200%' START '2026-06-16 00:00:00'",
+    "description": "OWASP A01:2025 - Monitors high-frequency sequential ID requests targeting API endpoints, signaling potential BOLA.",
+    "enabled": true
+  },
+  {
+    "name": "DAC_AQL_A01_SSRF_Cloud_Metadata",
+    "query": "SELECT sourceip, destinationip, destinationport, UTF8(payload) FROM events WHERE destinationip = '169.254.169.254' OR UTF8(payload) LIKE '%localhost%' START '2026-06-16 00:00:00'",
+    "description": "OWASP A01:2025 - Detects unauthorized internal server connections outbound to cloud instance metadata service.",
+    "enabled": true
+  },
+  {
+    "name": "DAC_AQL_A03_Malicious_Dependency_Download",
+    "query": "SELECT sourceip, destinationip, URIDomain(url) AS rogue_domain FROM events WHERE devicetype = 11 AND rogue_domain NOT IN ('github.com', 'npmjs.com', 'pypi.org') AND destinationport = 443",
+    "description": "OWASP A03:2025 - Identifies software build environments communicating with non-whitelisted external repositories.",
+    "enabled": true
+  },
+  {
+    "name": "DAC_AQL_A05_SQL_Injection_Payload",
+    "query": "SELECT sourceip, destinationip, UTF8(payload) AS msg FROM events WHERE devicetype = 12 AND (msg LIKE '%UNION%SELECT%' OR msg LIKE '%OR%1=1%' OR msg LIKE '%--%')",
+    "description": "OWASP A05:2025 - Detects standard SQL Injection signatures inside raw application layer web traffic packets.",
+    "enabled": true
+  },
+  {
+    "name": "DAC_AQL_A05_OS_Command_Injection",
+    "query": "SELECT sourceip, destinationip, UTF8(payload) AS web_payload FROM events WHERE devicetype = 12 AND (web_payload LIKE '%/bin/sh%' OR web_payload LIKE '%cmd.exe%' OR web_payload LIKE '%nc -e%')",
+    "description": "OWASP A05:2025 - Monitors web parameters containing command execution patterns or reverse shell binaries.",
+    "enabled": true
+  },
+  {
+    "name": "DAC_AQL_A07_Password_Spraying_Attempt",
+    "query": "SELECT sourceip, COUNT(username) AS unique_users, COUNT(*) as login_failures FROM events WHERE qid = 5000102 GROUP BY sourceip HAVING login_failures > 30 AND unique_users > 10",
+    "description": "OWASP A07:2025 - Tracks single IP addresses testing common credential sets against more than 10 unique corporate identifiers.",
+    "enabled": true
+  },
+  {
+    "name": "DAC_AQL_A08_Insecure_Deserialization",
+    "query": "SELECT sourceip, destinationip, UTF8(payload) AS serial_payload FROM events WHERE serial_payload LIKE '%rO0AB%' OR serial_payload LIKE '%O:4:%'",
+    "description": "OWASP A08:2025 - Scans web content body structures for serialization headers belonging to vulnerable Java and PHP objects.",
+    "enabled": true
+  },
+  {
+    "name": "DAC_AQL_A09_Security_Log_Stopped",
+    "query": "SELECT logsourceid, eventcount FROM events WHERE qid IN (5000501, 5000502) AND (UTF8(payload) LIKE '%stop%' OR UTF8(payload) LIKE '%clear%')",
+    "description": "OWASP A09:2025 - Triggers high severity alerts if key operational audit sub-systems or daemon logs are halted.",
+    "enabled": true
+  },
+  {
+    "name": "DAC_AQL_A10_Stack_Trace_Leaked",
+    "query": "SELECT sourceip, destinationip, UTF8(payload) AS error_msg FROM events WHERE devicetype = 12 AND (error_msg LIKE '%java.lang.NullPointerException%' OR error_msg LIKE '%IndexOutOfRangeException%')",
+    "description": "OWASP A10:2025 - Flags unhandled application server responses leaking core software backend architecture properties to users.",
+    "enabled": true
+  },
+  {
+    "name": "DAC_AQL_A10_API_Fuzzing_Flooding",
+    "query": "SELECT sourceip, COUNT(*) AS http_500_count FROM events WHERE devicetype = 12 AND HttpResponseCode = 500 GROUP BY sourceip HAVING http_500_count > 150",
+    "description": "OWASP A10:2025 - Detects rapid spikes in internal server error generation triggered by continuous web parameter fuzzing.",
+    "enabled": true
+  }
+]

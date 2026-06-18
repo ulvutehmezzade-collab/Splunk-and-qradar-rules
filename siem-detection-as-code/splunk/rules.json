@@ -1,0 +1,107 @@
+[
+  {
+    "name": "DAC_SPL_A01_BOLA_Suspicion",
+    "search": "sourcetype=access_combined | stats dc(user_id) as distinct_users values(uri_path) as requested_paths by session_id, src_ip | where distinct_users > 10",
+    "description": "OWASP A01:2025 - Detects Broken Object Level Authorization attempts via multiple user ID requests in a single session.",
+    "cron_schedule": "*/5 * * * *",
+    "is_scheduled": "1"
+  },
+  {
+    "name": "DAC_SPL_A01_SSRF_Metadata_Query",
+    "search": "sourcetype=access_combined (uri_query=\"*127.0.0.1*\" OR uri_query=\"*localhost*\" OR uri_query=\"*169.254.169.254*\") | stats count by src_ip, uri_path, uri_query",
+    "description": "OWASP A01:2025 - Detects Server-Side Request Forgery (SSRF) attempts targeting internal infrastructure and AWS metadata endpoint.",
+    "cron_schedule": "*/5 * * * *",
+    "is_scheduled": "1"
+  },
+  {
+    "name": "DAC_SPL_A02_Directory_Listing",
+    "search": "sourcetype=access_combined (uri_path=\"*/\" AND (status=200 OR status=302)) \"Index of /\" | stats count by src_ip, uri_path",
+    "description": "OWASP A02:2025 - Detects information disclosure via web server directory listing misconfiguration.",
+    "cron_schedule": "*/10 * * * *",
+    "is_scheduled": "1"
+  },
+  {
+    "name": "DAC_SPL_A02_External_Admin_Access",
+    "search": "sourcetype=access_combined uri_path IN (\"*/admin*\", \"*/config*\", \"*/dashboard*\") NOT (src_ip IN (\"10.0.0.0/8\", \"192.168.0.0/16\", \"172.16.0.0/12\")) | stats count by src_ip, uri_path, status",
+    "description": "OWASP A02:2025 - Monitors unauthorized external access requests targeting internal administrative interfaces.",
+    "cron_schedule": "*/5 * * * *",
+    "is_scheduled": "1"
+  },
+  {
+    "name": "DAC_SPL_A03_Supply_Chain_Malicious_Outbound",
+    "search": "sourcetype=pan:traffic (src_ip IN (10.0.0.0/8) AND dest_port=443) NOT dest_ip IN (github.com, npmjs.org, pypi.org, maven.org) | stats count by src_ip, dest_ip",
+    "description": "OWASP A03:2025 - Detects potential software supply chain compromise where environment pulls dependencies from rogue domains.",
+    "cron_schedule": "*/15 * * * *",
+    "is_scheduled": "1"
+  },
+  {
+    "name": "DAC_SPL_A04_Insecure_TLS_Ciphers",
+    "search": "sourcetype=ssl_logs (tls_version=\"TLSv1.0\" OR tls_version=\"TLSv1.1\" OR tls_cipher_suite IN (\"*RC4*\", \"*3DES*\", \"*MD5*\")) | stats count by src_ip, dest_ip, tls_version",
+    "description": "OWASP A04:2025 - Cryptographic Failures. Detects usage of broken TLS protocols and cipher suites vulnerable to MitM attacks.",
+    "cron_schedule": "0 * * * *",
+    "is_scheduled": "1"
+  },
+  {
+    "name": "DAC_SPL_A05_SQL_Injection_Patterns",
+    "search": "sourcetype=access_combined (uri_query=\"*UNION*SELECT*\" OR uri_query=\"*SELECT*FROM*\" OR uri_query=\"*OR*1=1*\") | stats count by src_ip, uri_path, uri_query",
+    "description": "OWASP A05:2025 - Detects common SQL Injection payload patterns passing through web application parameters.",
+    "cron_schedule": "*/5 * * * *",
+    "is_scheduled": "1"
+  },
+  {
+    "name": "DAC_SPL_A05_Command_Injection_Attempts",
+    "search": "sourcetype=access_combined (uri_query=\"*etc/passwd*\" OR uri_query=\"*bin/sh*\" OR uri_query=\"*whoami*\" OR uri_query=\"*cmd.exe*\") | stats count by src_ip, uri_path, uri_query",
+    "description": "OWASP A05:2025 - Detects OS Command Injection payloads aiming to execute native binary commands on the host.",
+    "cron_schedule": "*/5 * * * *",
+    "is_scheduled": "1"
+  },
+  {
+    "name": "DAC_SPL_A05_XSS_Reflected_Payloads",
+    "search": "sourcetype=access_combined (uri_query=\"*<script>*\" OR uri_query=\"*javascript:*\" OR uri_query=\"*onerror=*\") | stats count by src_ip, uri_path",
+    "description": "OWASP A05:2025 - Detects cross-site scripting (XSS) script tags inject attempts inside URL queries.",
+    "cron_schedule": "*/5 * * * *",
+    "is_scheduled": "1"
+  },
+  {
+    "name": "DAC_SPL_A07_Credential_Stuffing_Spam",
+    "search": "sourcetype=app_login status=failed | stats dc(user) as distinct_users count as failed_count by src_ip | where failed_count > 20 AND distinct_users > 5",
+    "description": "OWASP A07:2025 - Detects Credential Stuffing / Password Spraying attacks where a single IP tests multiple accounts.",
+    "cron_schedule": "*/5 * * * *",
+    "is_scheduled": "1"
+  },
+  {
+    "name": "DAC_SPL_A07_Brute_Force_Exploit_Success",
+    "search": "sourcetype=app_login | transaction src_ip maxpause=5m status IN (failed, success) | search status=failed AND status=success",
+    "description": "OWASP A07:2025 - Identifies a successful brute-force attack characterized by a success event after numerous failures.",
+    "cron_schedule": "*/5 * * * *",
+    "is_scheduled": "1"
+  },
+  {
+    "name": "DAC_SPL_A08_Insecure_Deserialization_Signals",
+    "search": "sourcetype=access_combined (uri_query=\"*rO0AB*\" OR uri_query=\"*O:4:*\" OR body=\"*T2JqZWN0*\") | stats count by src_ip, uri_path",
+    "description": "OWASP A08:2025 - Detects base64/hex patterns typical of insecure object deserialization (Java/PHP/.NET) in payloads.",
+    "cron_schedule": "*/10 * * * *",
+    "is_scheduled": "1"
+  },
+  {
+    "name": "DAC_SPL_A09_Audit_Log_Tampering",
+    "search": "sourcetype=linux_secure (command=\"*rm*-rf*/var/log*\" OR command=\"*service*syslog*stop*\" OR command=\"*systemctl*stop*auditd*\") | stats count by user, host",
+    "description": "OWASP A09:2025 - Detects threat actors attempting to clear tracks or stop local log forwarding systems.",
+    "cron_schedule": "*/2 * * * *",
+    "is_scheduled": "1"
+  },
+  {
+    "name": "DAC_SPL_A10_Verbose_Error_Stack_Leaks",
+    "search": "sourcetype=access_combined (body=\"*java.lang.NullPointerException*\" OR body=\"*Exception in thread*\" OR body=\"*SqlException*\") | stats count by uri_path, status",
+    "description": "OWASP A10:2025 - Detects application errors that leakage internal code stack traces, exposing system internals.",
+    "cron_schedule": "*/15 * * * *",
+    "is_scheduled": "1"
+  },
+  {
+    "name": "DAC_SPL_A10_High_Rate_HTTP_5xx_Anomaly",
+    "search": "sourcetype=access_combined status>=500 | bucket _time span=5m | stats count as error_count by _time, src_ip, uri_path | where error_count > 100",
+    "description": "OWASP A10:2025 - Identifies aggressive application fuzzing or denial of service targeting dynamic features.",
+    "cron_schedule": "*/5 * * * *",
+    "is_scheduled": "1"
+  }
+]
