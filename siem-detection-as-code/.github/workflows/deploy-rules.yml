@@ -6,7 +6,7 @@ on:
     branches:
       - main  # main branch-inə hər kod push olunanda işə düşəcək
   schedule:
-    - cron: '*/5 * * * *' # Həmçinin hər 5 dəqiqədən bir avtomatik yoxlayacaq
+    - cron: '*/5 * * * *' # Həmçinin hər 5 dəqiqədən bir avtomatik yoxlayacak
 
 jobs:
   sync:
@@ -21,7 +21,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-python-version: '3.x'
+        python-version: '3.x'
 
     # 3. Lazım olan kitabxanaları yükləyir
     - name: Install Dependencies
@@ -34,5 +34,4 @@ jobs:
       env:
         # GitHub Secrets-ə əlavə etdiyimiz SPLUNK_TOKEN-i bura bağlayırıq
         SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN }} 
-     - name: Run Splunk Script
-        run: python siem-detection-as-code/splunk/deploy_splunk.py
+      run: python siem-detection-as-code/splunk/deploy_splunk.py
