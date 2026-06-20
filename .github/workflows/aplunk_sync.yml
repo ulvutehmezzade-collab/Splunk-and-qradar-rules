@@ -27,6 +27,5 @@ jobs:
 
     - name: Run Splunk Script
       env:
-        SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN }} 
-      - name: Run Splunk Script
-  run: python siem-detection-as-code/splunk/deploy_splunk.py
+        SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN }}
+      run: python siem-detection-as-code/splunk/deploy_splunk.py
