@@ -3,19 +3,16 @@ import requests
 import urllib3
 import json
 
-# Disabling SSL warnings for self-signed certificates
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Reading token from environment variable
 SPLUNK_TOKEN = os.environ.get("SPLUNK_TOKEN", "").strip()
+# IP adresini kodun icinden silib sistemden oxuyuruq:
+SPLUNK_HOST = os.environ.get("SPLUNK_HOST", "").strip()
 
-# Checking if token exists
-if not SPLUNK_TOKEN:
-    print("XATA: SPLUNK_TOKEN tapilmadi!")
+if not SPLUNK_TOKEN or not SPLUNK_HOST:
+    print("XATA: SPLUNK_TOKEN ve ya SPLUNK_HOST tapilmadi!")
     exit(1)
 
-# Splunk configuration with your public IP
-SPLUNK_HOST = "https://35.175.66.83:8089"  
 API_URL = f"{SPLUNK_HOST}/servicesNS/nobody/search/saved/searches"
 
 headers = {
@@ -23,7 +20,6 @@ headers = {
     "Content-Type": "application/x-www-form-urlencoded"
 }
 
-# Path to rules file
 RULES_FILE = "siem-detection-as-code/splunk/rules.json"
 
 def deploy_rules():
