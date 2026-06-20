@@ -29,4 +29,4 @@ jobs:
       env:
         SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN }} 
       run: |
-        python deploy_splunk.py  # <--- Bura DİQQƏT: GitHub-dakı python faylının adı nədirsə, tam olaraq onu yaz (məsələn: splunk.py və s.)
+        python deploy_splunk.py  
