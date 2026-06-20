@@ -34,5 +34,5 @@ jobs:
       env:
         # GitHub Secrets-ə əlavə etdiyimiz SPLUNK_TOKEN-i bura bağlayırıq
         SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN }} 
-      run: |
-        python deploy_splunk.py  
+     - name: Run Splunk Script
+        run: python siem-detection-as-code/splunk/deploy_splunk.py
