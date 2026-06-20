@@ -14,8 +14,8 @@ if not SPLUNK_TOKEN:
     print("XATA: SPLUNK_TOKEN tapilmadi!")
     exit(1)
 
-# Splunk configuration
-SPLUNK_HOST = "https://localhost:8089"  
+# Splunk configuration with your public IP
+SPLUNK_HOST = "https://35.175.66.83:8089"  
 API_URL = f"{SPLUNK_HOST}/servicesNS/nobody/search/saved/searches"
 
 headers = {
@@ -57,19 +57,22 @@ def deploy_rules():
 
         print(f"Qayda gonderilir: {rule_name}")
         
-        response = requests.post(API_URL, headers=headers, data=rule_data, verify=False)
+        try:
+            response = requests.post(API_URL, headers=headers, data=rule_data, verify=False, timeout=15)
 
-        if response.status_code in [200, 201]:
-            print(f"UGUR: Qayda yaradildi: {rule_name}")
-        elif response.status_code == 409:
-            update_url = f"{API_URL}/{rule_name}"
-            response = requests.post(update_url, headers=headers, data=rule_data, verify=False)
-            if response.status_code == 200:
-                print(f"UGUR: Qayda yenilendi: {rule_name}")
+            if response.status_code in [200, 201]:
+                print(f"UGUR: Qayda yaradildi: {rule_name}")
+            elif response.status_code == 409:
+                update_url = f"{API_URL}/{rule_name}"
+                response = requests.post(update_url, headers=headers, data=rule_data, verify=False, timeout=15)
+                if response.status_code == 200:
+                    print(f"UGUR: Qayda yenilendi: {rule_name}")
+                else:
+                    print(f"XATA: Qayda yenilenmedi ({rule_name}): {response.text}")
             else:
-                print(f"XATA: Qayda yenilenmedi ({rule_name}): {response.text}")
-        else:
-            print(f"XATA: Status kodu: {response.status_code} - {response.text}")
+                print(f"XATA: Status kodu: {response.status_code} - {response.text}")
+        except Exception as e:
+            print(f"XATA: Baglanti qurula bilmedi ({rule_name}): {e}")
 
 if __name__ == "__main__":
     deploy_rules()
