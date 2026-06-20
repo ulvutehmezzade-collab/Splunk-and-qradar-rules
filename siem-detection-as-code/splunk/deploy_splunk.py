@@ -10,8 +10,7 @@ SPLUNK_HOST = "35.175.66.83"
 SPLUNK_PORT = "8089"
 
 # Tokeni muhit deyiseninden (Environment Variable) oxuyuruq
-SPLUNK_TOKEN = os.getenv("SPLUNK_TOKEN")
-
+token = os.environ.get("SPLUNK_TOKEN", "").strip()
 # Eger token tapilmazsa, skriptin xeta vermesini temin edirik
 if not SPLUNK_TOKEN:
     raise ValueError("XETA: SPLUNK_TOKEN muhit deyiseni teyin edilmeyib!")
