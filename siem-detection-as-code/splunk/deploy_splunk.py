@@ -1,39 +1,75 @@
+import os
 import requests
 import urllib3
-import os
+import json
 
-# Tehlukesizlik xeberdarliqlarini gizleyirik
+# Disabling SSL warnings for self-signed certificates
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Konfiqurasiya melumatlari
-SPLUNK_HOST = "35.175.66.83"
-SPLUNK_PORT = "8089"
+# Reading token from environment variable
+SPLUNK_TOKEN = os.environ.get("SPLUNK_TOKEN", "").strip()
 
-# Tokeni muhit deyiseninden (Environment Variable) oxuyuruq
-token = os.environ.get("SPLUNK_TOKEN", "").strip()
-# Eger token tapilmazsa, skriptin xeta vermesini temin edirik
+# Checking if token exists
 if not SPLUNK_TOKEN:
-    raise ValueError("XETA: SPLUNK_TOKEN muhit deyiseni teyin edilmeyib!")
+    print("XATA: SPLUNK_TOKEN tapilmadi!")
+    exit(1)
 
-# Splunk REST API unvani
-url = f"https://{SPLUNK_HOST}:{SPLUNK_PORT}/servicesNS/admin/search/saved/searches"
+# Splunk configuration
+SPLUNK_HOST = "https://localhost:8089"  
+API_URL = f"{SPLUNK_HOST}/servicesNS/nobody/search/saved/searches"
 
 headers = {
-    "Authorization": f"Bearer {SPLUNK_TOKEN}"
+    "Authorization": f"Bearer {SPLUNK_TOKEN}",
+    "Content-Type": "application/x-www-form-urlencoded"
 }
 
-rule_data = {
-    "name": "GitHub_Detected_Brute_Force",
-    "search": "index=firewall action=blocked | stats count by src_ip | filter count > 100",
-    "description": "GitHub vasitesile avtomatik yuklenmis kritik hucum qaydasi",
-    "is_scheduled": "1",
-    "cron_schedule": "*/5 * * * *"
-}
+# Path to rules file
+RULES_FILE = "siem-detection-as-code/splunk/rules.json"
 
-response = requests.post(url, headers=headers, data=rule_data, verify=False)
+def deploy_rules():
+    try:
+        with open(RULES_FILE, "r", encoding="utf-8") as f:
+            rules = json.load(f)
+    except FileNotFoundError:
+        try:
+            with open("rules.json", "r", encoding="utf-8") as f:
+                rules = json.load(f)
+        except Exception as e:
+            print(f"XATA: rules.json tapilmadi: {e}")
+            exit(1)
 
-if response.status_code == 201:
-    print("Ugurlu! Qayda Splunk serverine yuklendi.")
-else:
-    print(f"Xeta bas verdi! Status Code: {response.status_code}")
-    print(response.text)
+    print(f"Sinxronizasiya basladi. Qaydalarin sayi: {len(rules)}")
+
+    for rule in rules:
+        rule_name = rule.get("name")
+        rule_data = {
+            "name": rule_name,
+            "search": rule.get("search"),
+            "is_scheduled": 1,
+            "cron_schedule": rule.get("cron_schedule", "*/5 * * * *"),
+            "dispatch.earliest_time": rule.get("earliest_time", "-15m"),
+            "dispatch.latest_time": rule.get("latest_time", "now"),
+            "action.webhook": 1,
+            "action.webhook.cfg.url": rule.get("webhook_url"),
+            "disabled": 0,
+            "force_overwrite": "true"
+        }
+
+        print(f"Qayda gonderilir: {rule_name}")
+        
+        response = requests.post(API_URL, headers=headers, data=rule_data, verify=False)
+
+        if response.status_code in [200, 201]:
+            print(f"UGUR: Qayda yaradildi: {rule_name}")
+        elif response.status_code == 409:
+            update_url = f"{API_URL}/{rule_name}"
+            response = requests.post(update_url, headers=headers, data=rule_data, verify=False)
+            if response.status_code == 200:
+                print(f"UGUR: Qayda yenilendi: {rule_name}")
+            else:
+                print(f"XATA: Qayda yenilenmedi ({rule_name}): {response.text}")
+        else:
+            print(f"XATA: Status kodu: {response.status_code} - {response.text}")
+
+if __name__ == "__main__":
+    deploy_rules()
