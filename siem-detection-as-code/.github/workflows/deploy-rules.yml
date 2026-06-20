@@ -35,4 +35,4 @@ jobs:
         # GitHub Secrets-ə əlavə etdiyimiz SPLUNK_TOKEN-i bura bağlayırıq
         SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN }} 
       run: |
-        python splunk_script.py  # Əgər python faylının adı fərqlidirsə, onu yaz
+        python deploy_splunk.py  # Əgər python faylının adı fərqlidirsə, onu yaz
